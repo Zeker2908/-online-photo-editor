@@ -34,17 +34,8 @@ func main() {
 		log.Error("failed to init image storage", sl.Err(err))
 		os.Exit(1)
 	}
-	_ = imageStorage
 
-	router := chi.NewRouter()
-
-	router.Use(middleware.RequestID)
-	router.Use(middleware.RealIP)
-	router.Use(mwLogger.New(log))
-	router.Use(middleware.Recoverer)
-	router.Use(middleware.URLFormat)
-
-	router.Post("/img", save.New(log, imageStorage))
+	router := setupRouter(log, imageStorage, cfg.StorageImagePath)
 
 	fileServer := http.FileServer(http.Dir(cfg.StorageImagePath))
 	router.Handle("/images/*", http.StripPrefix("/images", fileServer))
@@ -91,4 +82,16 @@ func setupPrettySlog() *slog.Logger {
 	handler := opts.NewPrettyHandler(os.Stdout)
 
 	return slog.New(handler)
+}
+
+func setupRouter(log *slog.Logger, imageStorage *imgStorage.ImageStorage, storagePath string) *chi.Mux {
+	router := chi.NewRouter()
+	router.Use(middleware.RequestID, middleware.RealIP, mwLogger.New(log), middleware.Recoverer, middleware.URLFormat)
+
+	router.Post("/img", save.New(log, imageStorage))
+
+	fileServer := http.FileServer(http.Dir(storagePath))
+	router.Handle("/images/*", http.StripPrefix("/images", fileServer))
+
+	return router
 }

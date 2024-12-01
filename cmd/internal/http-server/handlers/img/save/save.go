@@ -2,6 +2,7 @@ package save
 
 import (
 	"log/slog"
+	"mime/multipart"
 	"net/http"
 	"online-photo-editor/cmd/internal/lib/api/response"
 	"online-photo-editor/cmd/internal/lib/logger/sl"
@@ -16,7 +17,7 @@ type Response struct {
 }
 
 type ImgSaver interface {
-	SaveImg(r *http.Request) (string, error)
+	SaveImg(file multipart.File, handler *multipart.FileHeader) (string, error)
 }
 
 func New(log *slog.Logger, imgSaver ImgSaver) http.HandlerFunc {
@@ -39,21 +40,23 @@ func New(log *slog.Logger, imgSaver ImgSaver) http.HandlerFunc {
 		log.Info("multipart/form-data decoded")
 
 		files := r.MultipartForm.File["image"]
-		if len(files) == 0 {
-			log.Error("no file uploaded")
+		if len(files) != 1 {
+			log.Error("invalid number of files uploaded", slog.Int("file_count", len(files)))
+			render.Status(r, http.StatusBadRequest)
+			render.JSON(w, r, response.Error("exactly one file must be uploaded"))
+			return
+		}
+
+		file, handler, err := r.FormFile("image")
+		if err != nil {
+			log.Error("no file uploaded", sl.Err(err))
 			render.Status(r, http.StatusBadRequest)
 			render.JSON(w, r, response.Error("no file uploaded"))
 			return
 		}
+		defer file.Close()
 
-		if len(files) > 1 {
-			log.Error("only one file allowed")
-			render.Status(r, http.StatusBadRequest)
-			render.JSON(w, r, response.Error("only one file allowed"))
-			return
-		}
-
-		imgUrl, err := imgSaver.SaveImg(r)
+		imgUrl, err := imgSaver.SaveImg(file, handler)
 		if err != nil {
 			log.Error("failed to save image", sl.Err(err))
 			render.Status(r, http.StatusInternalServerError)

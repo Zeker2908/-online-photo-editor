@@ -3,6 +3,7 @@ package img
 import (
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -23,14 +24,8 @@ func New(internalStoragePath string) (*ImageStorage, error) {
 	return &ImageStorage{Path: internalStoragePath}, nil
 }
 
-func (img *ImageStorage) SaveImg(r *http.Request) (string, error) {
+func (img *ImageStorage) SaveImg(file multipart.File, handler *multipart.FileHeader) (string, error) {
 	const op = "storage.img.SaveImg"
-
-	file, handler, err := r.FormFile("image")
-	if err != nil {
-		return "", fmt.Errorf("%s: %w", op, err)
-	}
-	defer file.Close()
 
 	buffer := make([]byte, 512)
 	if _, err := file.Read(buffer); err != nil {
