@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 	"online-photo-editor/cmd/internal/config"
+	"online-photo-editor/cmd/internal/http-server/handlers/img/process"
 	"online-photo-editor/cmd/internal/http-server/handlers/img/save"
 	mwLogger "online-photo-editor/cmd/internal/http-server/middleware/logger"
 	"online-photo-editor/cmd/internal/lib/logger/handlers/slogpretty"
@@ -88,7 +89,9 @@ func setupRouter(log *slog.Logger, imageStorage *imgStorage.ImageStorage, storag
 	router := chi.NewRouter()
 	router.Use(middleware.RequestID, middleware.RealIP, mwLogger.New(log), middleware.Recoverer, middleware.URLFormat)
 
-	router.Post("/img", save.New(log, imageStorage))
+	router.Post("/image", save.New(log, imageStorage))
+
+	router.Post("/image/process", process.New(log, imageStorage))
 
 	fileServer := http.FileServer(http.Dir(storagePath))
 	router.Handle("/images/*", http.StripPrefix("/images", fileServer))

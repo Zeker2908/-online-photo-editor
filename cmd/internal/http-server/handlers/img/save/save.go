@@ -13,31 +13,34 @@ import (
 
 type Response struct {
 	response.Response
-	ImageUrl string `json:"image_url,omitempty"`
+	ImageUrl string `json:"image_url"`
 }
 
-type ImgSaver interface {
-	SaveImg(file multipart.File, handler *multipart.FileHeader) (string, error)
+type ImageSaver interface {
+	UploadImage(file multipart.File, handler *multipart.FileHeader) (string, error)
 }
 
-func New(log *slog.Logger, imgSaver ImgSaver) http.HandlerFunc {
+// 10 MB максимальный размер
+const maxImageSize = 10 << 20
+
+func New(log *slog.Logger, imgSaver ImageSaver) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "handlers.img.save"
+		const op = "handlers.img.save.New"
 
 		log.With(
 			slog.String("op", op),
 			slog.String("request_id", middleware.GetReqID(r.Context())),
 		)
 
-		err := r.ParseMultipartForm(10 << 20) // 10 MB максимальный размер
+		err := r.ParseMultipartForm(maxImageSize)
 		if err != nil {
-			log.Error("failed to decode multipart/form-data", sl.Err(err))
+			log.Error("failed to parse multipart/form-data", sl.Err(err))
 			render.Status(r, http.StatusBadRequest)
-			render.JSON(w, r, response.Error("failed to decode multipart/form-data"))
+			render.JSON(w, r, response.Error("failed to parse multipart/form-data"))
 			return
 		}
 
-		log.Info("multipart/form-data decoded")
+		log.Info("multipart/form-data parsed")
 
 		files := r.MultipartForm.File["image"]
 		if len(files) != 1 {
@@ -56,7 +59,7 @@ func New(log *slog.Logger, imgSaver ImgSaver) http.HandlerFunc {
 		}
 		defer file.Close()
 
-		imgUrl, err := imgSaver.SaveImg(file, handler)
+		imgUrl, err := imgSaver.UploadImage(file, handler)
 		if err != nil {
 			log.Error("failed to save image", sl.Err(err))
 			render.Status(r, http.StatusInternalServerError)
