@@ -7,12 +7,10 @@ import (
 )
 
 type ResizeParams struct {
-	Width  int `json:"width" validate:"required,gte=0"`
-	Height int `json:"height" validate:"required,gte=0"`
+	Width  int `json:"width" validate:"required,min=0,max=8000"`
+	Height int `json:"height" validate:"required,min=0,max=8000"`
 }
 
-func (params *ResizeParams) Validate()
-
-func (params *ResizeParams) handleResize(img image.Image) (image.Image, error) {
+func (params *ResizeParams) ResizeImage(img image.Image) (image.Image, error) {
 	return imaging.Resize(img, params.Width, params.Height, imaging.Lanczos), nil
 }

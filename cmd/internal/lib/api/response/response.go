@@ -2,8 +2,12 @@ package response
 
 import (
 	"fmt"
+	"log/slog"
+	"net/http"
+	"online-photo-editor/cmd/internal/lib/logger/sl"
 	"strings"
 
+	"github.com/go-chi/render"
 	"github.com/go-playground/validator/v10"
 )
 
@@ -46,4 +50,17 @@ func ValidationError(errs validator.ValidationErrors) Response {
 		Status: StatusError,
 		Error:  strings.Join(errMsgs, ", "),
 	}
+}
+
+func Validation(log *slog.Logger, w http.ResponseWriter, r *http.Request, s interface{}, errStatus int) bool {
+	if err := validator.New().Struct(s); err != nil {
+		validateErr := err.(validator.ValidationErrors)
+
+		log.Error("invalid request", sl.Err(err))
+		render.Status(r, errStatus)
+		render.JSON(w, r, ValidationError(validateErr))
+
+		return false
+	}
+	return true
 }

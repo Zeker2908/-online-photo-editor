@@ -5,7 +5,6 @@ import (
 	"image"
 
 	"github.com/disintegration/imaging"
-	"github.com/go-playground/validator/v10"
 )
 
 type CropParams struct {
@@ -16,14 +15,7 @@ type CropParams struct {
 }
 
 func (params *CropParams) validate(img image.Image) error {
-	const op = "api.crop.Validate"
-
-	validate := validator.New()
-
-	err := validate.Struct(params)
-	if err != nil {
-		return fmt.Errorf("%s validation failed: %v", op, err)
-	}
+	const op = "api.crop.validate"
 
 	if params.X+params.Width > img.Bounds().Max.X || params.Y+params.Height > img.Bounds().Max.Y {
 		return fmt.Errorf("%s crop area exceeds image boundaries", op)
@@ -32,7 +24,7 @@ func (params *CropParams) validate(img image.Image) error {
 	return nil
 }
 
-func (params *CropParams) HandleCrop(img image.Image) (image.Image, error) {
+func (params *CropParams) CropImage(img image.Image) (image.Image, error) {
 	if err := params.validate(img); err != nil {
 		return nil, err
 	}

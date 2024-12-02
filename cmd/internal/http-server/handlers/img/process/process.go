@@ -8,7 +8,9 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"online-photo-editor/cmd/internal/lib/api/convert"
 	"online-photo-editor/cmd/internal/lib/api/crop"
+	"online-photo-editor/cmd/internal/lib/api/resize"
 	"online-photo-editor/cmd/internal/lib/api/response"
 	"online-photo-editor/cmd/internal/lib/logger/sl"
 	imgStorage "online-photo-editor/cmd/internal/storage/img"
@@ -17,7 +19,6 @@ import (
 
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/render"
-	"github.com/go-playground/validator/v10"
 )
 
 const (
@@ -27,12 +28,12 @@ const (
 )
 
 type ImageAction struct {
-	Action string      `json:"action" validate:"required,oneof=crop resize convert"`
+	Action string      `json:"action" validate:"required,max=10"`
 	Params interface{} `json:"params" validate:"required"`
 }
 
 type Request struct {
-	Actions   []ImageAction `json:"actions" validate:"required"`
+	Actions   []ImageAction `json:"actions" validate:"required,max=5"`
 	ImageName string        `json:"image_name" validate:"required,max=100"`
 }
 
@@ -75,13 +76,7 @@ func New(log *slog.Logger, imgProcessor ImageProcessor) http.HandlerFunc {
 			return
 		}
 
-		if err := validator.New().Struct(req); err != nil {
-			validateErr := err.(validator.ValidationErrors)
-
-			log.Error("invalid request", sl.Err(err))
-			render.Status(r, http.StatusBadRequest)
-			render.JSON(w, r, response.ValidationError(validateErr))
-
+		if !response.Validation(log, w, r, req, http.StatusBadRequest) {
 			return
 		}
 
@@ -95,6 +90,8 @@ func New(log *slog.Logger, imgProcessor ImageProcessor) http.HandlerFunc {
 			return
 		}
 
+		fileExt := strings.ToLower(filepath.Ext(imgPath))
+
 		inputImg, err := imgProcessor.LoadImage(req.ImageName)
 		if err != nil {
 			log.Error("failed to load image", sl.Err(err))
@@ -104,6 +101,9 @@ func New(log *slog.Logger, imgProcessor ImageProcessor) http.HandlerFunc {
 		}
 
 		for _, action := range req.Actions {
+			if !response.Validation(log, w, r, action, http.StatusBadRequest) {
+				return
+			}
 			switch action.Action {
 			case cropAction:
 				var params crop.CropParams
@@ -113,22 +113,52 @@ func New(log *slog.Logger, imgProcessor ImageProcessor) http.HandlerFunc {
 					render.JSON(w, r, response.Error("invalid crop params"))
 					return
 				}
-				inputImg, err = params.HandleCrop(inputImg)
+
+				if !response.Validation(log, w, r, params, http.StatusBadRequest) {
+					return
+				}
+
+				inputImg, err = params.CropImage(inputImg)
+			case resizeAction:
+				var params resize.ResizeParams
+				if err := decodeParams(action.Params, &params); err != nil {
+					log.Error("invalid resize params", sl.Err(err))
+					render.Status(r, http.StatusBadRequest)
+					render.JSON(w, r, response.Error("invalid resize params"))
+					return
+				}
+				if !response.Validation(log, w, r, params, http.StatusBadRequest) {
+					return
+				}
+				inputImg, err = params.ResizeImage(inputImg)
+			case convertAction:
+				var params convert.ConvertParams
+				if err := decodeParams(action.Params, &params); err != nil {
+					log.Error("invalid convert params", sl.Err(err))
+					render.Status(r, http.StatusBadRequest)
+					render.JSON(w, r, response.Error("invalid convert params"))
+					return
+				}
+				if !response.Validation(log, w, r, params, http.StatusBadRequest) {
+					return
+				}
+				fileExt, err = params.ConvertImage()
 			default:
-				log.Error("unknown action", sl.Err(err))
+				err = fmt.Errorf("field %s is not valid", action.Action)
+				log.Error("invalid action", sl.Err(err))
 				render.Status(r, http.StatusBadRequest)
-				render.JSON(w, r, response.Error(fmt.Sprintf("unknown action: %s", action.Action)))
+				render.JSON(w, r, response.Error(err.Error()))
 				return
 			}
 			if err != nil {
 				log.Error("failed to perform action", sl.Err(err))
-				render.Status(r, http.StatusInternalServerError)
+				render.Status(r, http.StatusBadRequest)
 				render.JSON(w, r, response.Error(fmt.Sprintf("failed to perform action %s: %v", action.Action, err)))
 				return
 			}
 		}
 
-		imgName, err := imgStorage.GenerateName("proc", strings.ToLower(filepath.Ext(imgPath)))
+		imgName, err := imgStorage.GenerateName("proc", fileExt)
 		if err != nil {
 			log.Error("failed to generate name", sl.Err(err))
 			render.Status(r, http.StatusInternalServerError)
@@ -139,7 +169,7 @@ func New(log *slog.Logger, imgProcessor ImageProcessor) http.HandlerFunc {
 		imgUrl, err := imgProcessor.SaveImage(inputImg, imgName)
 		if err != nil {
 			log.Error("failed to save image", sl.Err(err))
-			render.Status(r, http.StatusInternalServerError)
+			render.Status(r, http.StatusUnsupportedMediaType)
 			render.JSON(w, r, response.Error("failed to save image"))
 			return
 		}
