@@ -8,10 +8,16 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"online-photo-editor/cmd/internal/lib/api/blur"
+	"online-photo-editor/cmd/internal/lib/api/brightness"
+	"online-photo-editor/cmd/internal/lib/api/contrast"
 	"online-photo-editor/cmd/internal/lib/api/convert"
 	"online-photo-editor/cmd/internal/lib/api/crop"
+	"online-photo-editor/cmd/internal/lib/api/gamma"
 	"online-photo-editor/cmd/internal/lib/api/resize"
 	"online-photo-editor/cmd/internal/lib/api/response"
+	"online-photo-editor/cmd/internal/lib/api/saturation"
+	"online-photo-editor/cmd/internal/lib/api/sharpen"
 	"online-photo-editor/cmd/internal/lib/logger/sl"
 	imgStorage "online-photo-editor/cmd/internal/storage/filesystem"
 	"path/filepath"
@@ -22,9 +28,15 @@ import (
 )
 
 const (
-	cropAction    = "crop"
-	resizeAction  = "resize"
-	convertAction = "convert"
+	cropAction       = "crop"
+	resizeAction     = "resize"
+	convertAction    = "convert"
+	blurAction       = "blur"
+	gammaAction      = "gamma"
+	contrastAction   = "contrast"
+	sharpenAction    = "sharpen"
+	brightnessAction = "brightness"
+	saturationAction = "saturation"
 )
 
 type ImageAction struct {
@@ -131,6 +143,78 @@ func New(log *slog.Logger, imgProcessor ImageProcessor) http.HandlerFunc {
 					return
 				}
 				inputImg, err = params.ResizeImage(inputImg)
+			case blurAction:
+				var params blur.BlurParams
+				if err := decodeParams(action.Params, &params); err != nil {
+					log.Error("invalid blur params", sl.Err(err))
+					render.Status(r, http.StatusBadRequest)
+					render.JSON(w, r, response.Error("invalid blur params"))
+					return
+				}
+				if !response.Validation(log, w, r, params, http.StatusBadRequest) {
+					return
+				}
+				inputImg, err = params.BlurImage(inputImg)
+			case gammaAction:
+				var params gamma.GammaParams
+				if err := decodeParams(action.Params, &params); err != nil {
+					log.Error("invalid gamma params", sl.Err(err))
+					render.Status(r, http.StatusBadRequest)
+					render.JSON(w, r, response.Error("invalid gamma params"))
+					return
+				}
+				if !response.Validation(log, w, r, params, http.StatusBadRequest) {
+					return
+				}
+				inputImg, err = params.GammaImage(inputImg)
+			case contrastAction:
+				var params contrast.ContrastParams
+				if err := decodeParams(action.Params, &params); err != nil {
+					log.Error("invalid gamma params", sl.Err(err))
+					render.Status(r, http.StatusBadRequest)
+					render.JSON(w, r, response.Error("invalid gamma params"))
+					return
+				}
+				if !response.Validation(log, w, r, params, http.StatusBadRequest) {
+					return
+				}
+				inputImg, err = params.ContrastImage(inputImg)
+			case sharpenAction:
+				var params sharpen.SharpenParams
+				if err := decodeParams(action.Params, &params); err != nil {
+					log.Error("invalid sharpen params", sl.Err(err))
+					render.Status(r, http.StatusBadRequest)
+					render.JSON(w, r, response.Error("invalid sharpen params"))
+					return
+				}
+				if !response.Validation(log, w, r, params, http.StatusBadRequest) {
+					return
+				}
+				inputImg, err = params.SharpenImage(inputImg)
+			case brightnessAction:
+				var params brightness.BrightnessParams
+				if err := decodeParams(action.Params, &params); err != nil {
+					log.Error("invalid sharpen params", sl.Err(err))
+					render.Status(r, http.StatusBadRequest)
+					render.JSON(w, r, response.Error("invalid sharpen params"))
+					return
+				}
+				if !response.Validation(log, w, r, params, http.StatusBadRequest) {
+					return
+				}
+				inputImg, err = params.BrightnessImage(inputImg)
+			case saturationAction:
+				var params saturation.SaturationParams
+				if err := decodeParams(action.Params, &params); err != nil {
+					log.Error("invalid sharpen params", sl.Err(err))
+					render.Status(r, http.StatusBadRequest)
+					render.JSON(w, r, response.Error("invalid sharpen params"))
+					return
+				}
+				if !response.Validation(log, w, r, params, http.StatusBadRequest) {
+					return
+				}
+				inputImg, err = params.SaturationImage(inputImg)
 			case convertAction:
 				var params convert.ConvertParams
 				if err := decodeParams(action.Params, &params); err != nil {
