@@ -1,16 +1,20 @@
 package main
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 	"online-photo-editor/cmd/internal/config"
-	"online-photo-editor/cmd/internal/http-server/handlers/img/process"
+	imgProcessor "online-photo-editor/cmd/internal/http-server/handlers/img/processor"
 	"online-photo-editor/cmd/internal/http-server/handlers/img/save"
 	mwLogger "online-photo-editor/cmd/internal/http-server/middleware/logger"
 	"online-photo-editor/cmd/internal/lib/logger/handlers/slogpretty"
 	"online-photo-editor/cmd/internal/lib/logger/sl"
-	imgStorage "online-photo-editor/cmd/internal/storage/img"
+	imgStorage "online-photo-editor/cmd/internal/storage/filesystem"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -43,6 +47,9 @@ func main() {
 
 	log.Info("starting server", slog.String("address", cfg.Address))
 
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+
 	srv := &http.Server{
 		Addr:         cfg.Address,
 		Handler:      router,
@@ -51,11 +58,29 @@ func main() {
 		IdleTimeout:  cfg.HTTPServer.IdleTimeout,
 	}
 
-	if err := srv.ListenAndServe(); err != nil {
-		log.Error("failed to start server")
+	go func() {
+		if err := srv.ListenAndServe(); err != nil {
+			log.Error("failed to start server")
+		}
+	}()
+
+	log.Info("server started")
+
+	<-done
+	log.Info("stopping server")
+
+	// TODO: move timeout to config
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Error("failed to stop server", sl.Err(err))
+
+		return
 	}
 
-	log.Error("server stopped")
+	log.Info("server stopped")
+
 }
 
 func setupLogger(env string) *slog.Logger {
@@ -91,7 +116,7 @@ func setupRouter(log *slog.Logger, imageStorage *imgStorage.ImageStorage, storag
 
 	router.Post("/image", save.New(log, imageStorage))
 
-	router.Post("/image/process", process.New(log, imageStorage))
+	router.Post("/image/process", imgProcessor.New(log, imageStorage))
 
 	fileServer := http.FileServer(http.Dir(storagePath))
 	router.Handle("/images/*", http.StripPrefix("/images", fileServer))

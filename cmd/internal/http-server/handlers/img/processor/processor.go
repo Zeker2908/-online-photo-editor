@@ -1,4 +1,4 @@
-package process
+package processor
 
 import (
 	"encoding/json"
@@ -13,7 +13,7 @@ import (
 	"online-photo-editor/cmd/internal/lib/api/resize"
 	"online-photo-editor/cmd/internal/lib/api/response"
 	"online-photo-editor/cmd/internal/lib/logger/sl"
-	imgStorage "online-photo-editor/cmd/internal/storage/img"
+	imgStorage "online-photo-editor/cmd/internal/storage/filesystem"
 	"path/filepath"
 	"strings"
 
@@ -144,7 +144,7 @@ func New(log *slog.Logger, imgProcessor ImageProcessor) http.HandlerFunc {
 				}
 				fileExt, err = params.ConvertImage()
 			default:
-				err = fmt.Errorf("field %s is not valid", action.Action)
+				err = fmt.Errorf("field %s must be one of the allowed values`", action.Action)
 				log.Error("invalid action", sl.Err(err))
 				render.Status(r, http.StatusBadRequest)
 				render.JSON(w, r, response.Error(err.Error()))

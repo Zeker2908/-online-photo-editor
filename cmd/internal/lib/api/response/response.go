@@ -37,10 +37,18 @@ func Error(msg string) Response {
 func ValidationError(errs validator.ValidationErrors) Response {
 	var errMsgs []string
 
-	//TODO: Изменить структуру под изображения
-
 	for _, err := range errs {
 		switch err.ActualTag() {
+		case "required":
+			errMsgs = append(errMsgs, fmt.Sprintf("field %s is a required field", err.Field()))
+		case "max":
+			errMsgs = append(errMsgs, fmt.Sprintf("field %s  greater than max value", err.Field()))
+		case "min":
+			errMsgs = append(errMsgs, fmt.Sprintf("field %s is less than min value", err.Field()))
+		case "lowercase":
+			errMsgs = append(errMsgs, fmt.Sprintf("field %s is lis not lowercase", err.Field()))
+		case "oneof":
+			errMsgs = append(errMsgs, fmt.Sprintf("field %s must be one of the allowed values", err.Field()))
 		default:
 			errMsgs = append(errMsgs, fmt.Sprintf("field %s is not valid", err.Field()))
 		}
