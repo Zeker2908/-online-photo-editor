@@ -5,8 +5,17 @@ import (
 	"log/slog"
 	"net/http"
 	"online-photo-editor/cmd/internal/config"
-	imgProcessor "online-photo-editor/cmd/internal/http-server/handlers/img/processor"
-	"online-photo-editor/cmd/internal/http-server/handlers/img/save"
+	"online-photo-editor/cmd/internal/http-server/handlers/image/blur"
+	"online-photo-editor/cmd/internal/http-server/handlers/image/brightness"
+	"online-photo-editor/cmd/internal/http-server/handlers/image/contrast"
+	"online-photo-editor/cmd/internal/http-server/handlers/image/convert"
+	"online-photo-editor/cmd/internal/http-server/handlers/image/crop"
+	"online-photo-editor/cmd/internal/http-server/handlers/image/gamma"
+	"online-photo-editor/cmd/internal/http-server/handlers/image/processor"
+	"online-photo-editor/cmd/internal/http-server/handlers/image/resize"
+	"online-photo-editor/cmd/internal/http-server/handlers/image/saturation"
+	"online-photo-editor/cmd/internal/http-server/handlers/image/save"
+	"online-photo-editor/cmd/internal/http-server/handlers/image/sharpen"
 	mwLogger "online-photo-editor/cmd/internal/http-server/middleware/logger"
 	"online-photo-editor/cmd/internal/lib/logger/handlers/slogpretty"
 	"online-photo-editor/cmd/internal/lib/logger/sl"
@@ -39,6 +48,8 @@ func main() {
 		log.Error("failed to init image storage", sl.Err(err))
 		os.Exit(1)
 	}
+
+	//TODO: add storage with users and their authentication
 
 	router := setupRouter(log, imageStorage, cfg.StorageImagePath)
 
@@ -116,7 +127,25 @@ func setupRouter(log *slog.Logger, imageStorage *imgStorage.ImageStorage, storag
 
 	router.Post("/image", save.New(log, imageStorage))
 
-	router.Post("/image/process", imgProcessor.New(log, imageStorage))
+	router.Post("/image/crop", crop.New(log, imageStorage))
+
+	router.Post("/image/resize", resize.New(log, imageStorage))
+
+	router.Post("/image/convert", convert.New(log, imageStorage))
+
+	router.Post("/image/blur", blur.New(log, imageStorage))
+
+	router.Post("/image/brightness", brightness.New(log, imageStorage))
+
+	router.Post("/image/contrast", contrast.New(log, imageStorage))
+
+	router.Post("/image/gamma", gamma.New(log, imageStorage))
+
+	router.Post("/image/saturation", saturation.New(log, imageStorage))
+
+	router.Post("/image/sharpen", sharpen.New(log, imageStorage))
+
+	router.Post("/image/process", processor.New(log, imageStorage))
 
 	fileServer := http.FileServer(http.Dir(storagePath))
 	router.Handle("/images/*", http.StripPrefix("/images", fileServer))

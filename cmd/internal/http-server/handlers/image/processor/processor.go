@@ -7,6 +7,7 @@ import (
 	"image"
 	"io"
 	"log/slog"
+	"mime/multipart"
 	"net/http"
 	"online-photo-editor/cmd/internal/lib/api/blur"
 	"online-photo-editor/cmd/internal/lib/api/brightness"
@@ -19,7 +20,6 @@ import (
 	"online-photo-editor/cmd/internal/lib/api/saturation"
 	"online-photo-editor/cmd/internal/lib/api/sharpen"
 	"online-photo-editor/cmd/internal/lib/logger/sl"
-	imgStorage "online-photo-editor/cmd/internal/storage/filesystem"
 	"path/filepath"
 	"strings"
 
@@ -45,7 +45,7 @@ type ImageAction struct {
 }
 
 type Request struct {
-	Actions   []ImageAction `json:"actions" validate:"required,max=5"`
+	Actions   []ImageAction `json:"actions" validate:"required,min=1"`
 	ImageName string        `json:"image_name" validate:"required,max=100"`
 }
 
@@ -58,11 +58,14 @@ type ImageProcessor interface {
 	FindImage(imgName string) (string, error)
 	LoadImage(imgName string) (image.Image, error)
 	SaveImage(inputImg image.Image, imgName string) (string, error)
+	UploadImage(file multipart.File, handler *multipart.FileHeader) (string, error)
+	DeleteImage(imgName string) error
+	GenerateName(prefix string, fileExt string) (string, error)
 }
 
 func New(log *slog.Logger, imgProcessor ImageProcessor) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "handlers.img.process.New"
+		const op = "handlers.img.processor.New"
 
 		log.With(
 			slog.String("op", op),
@@ -242,7 +245,7 @@ func New(log *slog.Logger, imgProcessor ImageProcessor) http.HandlerFunc {
 			}
 		}
 
-		imgName, err := imgStorage.GenerateName("proc", fileExt)
+		imgName, err := imgProcessor.GenerateName("proc", fileExt)
 		if err != nil {
 			log.Error("failed to generate name", sl.Err(err))
 			render.Status(r, http.StatusInternalServerError)

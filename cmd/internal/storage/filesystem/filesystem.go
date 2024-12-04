@@ -3,6 +3,7 @@ package filesystem
 import (
 	"fmt"
 	"image"
+	"image/gif"
 	"image/jpeg"
 	"image/png"
 	"io"
@@ -12,6 +13,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"golang.org/x/image/bmp"
 )
 
 type ImageStorage struct {
@@ -44,7 +47,7 @@ func (img *ImageStorage) UploadImage(file multipart.File, handler *multipart.Fil
 		return "", fmt.Errorf("%s: unsupported file type: %s", op, mimeType)
 	}
 
-	fileName, err := GenerateName("img", filepath.Ext(handler.Filename))
+	fileName, err := img.GenerateName("img", filepath.Ext(handler.Filename))
 	if err != nil {
 		return "", err
 	}
@@ -130,20 +133,24 @@ func (img *ImageStorage) SaveImage(inputImg image.Image, imgName string) (string
 		err = saveJPEG(inputImg, filePath)
 	case ".png":
 		err = savePNG(inputImg, filePath)
+	case ".gif":
+		err = saveGIF(inputImg, filePath)
+	case ".bmp":
+		err = saveBMP(inputImg, filePath)
 	default:
 		return "", fmt.Errorf("%s: unsupported file format: %s", op, fileExt)
 	}
-
 	if err != nil {
 		return "", fmt.Errorf("%s: %w", op, err)
 	}
 
 	return filePath, nil
 }
+func (img *ImageStorage) GenerateName(prefix string, fileExt string) (string, error) {
+	const op = "storage.img.GenerateName"
 
-func GenerateName(prefix string, fileExt string) (string, error) {
 	if prefix == "" || fileExt == "" {
-		return "", fmt.Errorf("the file prefix or extension must not be empty")
+		return "", fmt.Errorf("%s: the file prefix or extension must not be empty", op)
 	}
 
 	if !strings.HasPrefix(fileExt, ".") {
@@ -152,7 +159,6 @@ func GenerateName(prefix string, fileExt string) (string, error) {
 
 	return fmt.Sprintf("%s_%s%s", prefix, time.Now().Format("20060102150405"), fileExt), nil
 }
-
 func saveJPEG(img image.Image, filePath string) error {
 	file, err := os.Create(filePath)
 	if err != nil {
@@ -172,10 +178,27 @@ func savePNG(img image.Image, filePath string) error {
 
 	return png.Encode(file, img)
 }
+func saveGIF(img image.Image, filePath string) error {
+	file, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
 
+	return gif.Encode(file, img, nil)
+}
+func saveBMP(img image.Image, filePath string) error {
+	file, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	return bmp.Encode(file, img)
+}
 func isImage(mimeType string) bool {
 	switch mimeType {
-	case "image/jpeg", "image/png":
+	case "image/jpeg", "image/png", "image/bmp", "image/gif":
 		return true
 	default:
 		return false

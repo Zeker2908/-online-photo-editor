@@ -2,8 +2,8 @@ package save
 
 import (
 	"log/slog"
-	"mime/multipart"
 	"net/http"
+	"online-photo-editor/cmd/internal/http-server/handlers/image/processor"
 	"online-photo-editor/cmd/internal/lib/api/response"
 	"online-photo-editor/cmd/internal/lib/logger/sl"
 
@@ -16,14 +16,10 @@ type Response struct {
 	ImageUrl string `json:"image_url"`
 }
 
-type ImageSaver interface {
-	UploadImage(file multipart.File, handler *multipart.FileHeader) (string, error)
-}
-
 // 10 MB максимальный размер
 const maxImageSize = 10 << 20
 
-func New(log *slog.Logger, imgSaver ImageSaver) http.HandlerFunc {
+func New(log *slog.Logger, imgSaver processor.ImageProcessor) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.img.save.New"
 
