@@ -4,22 +4,22 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
-	"online-photo-editor/cmd/internal/config"
-	"online-photo-editor/cmd/internal/http-server/handlers/image/blur"
-	"online-photo-editor/cmd/internal/http-server/handlers/image/brightness"
-	"online-photo-editor/cmd/internal/http-server/handlers/image/contrast"
-	"online-photo-editor/cmd/internal/http-server/handlers/image/convert"
-	"online-photo-editor/cmd/internal/http-server/handlers/image/crop"
-	"online-photo-editor/cmd/internal/http-server/handlers/image/gamma"
-	"online-photo-editor/cmd/internal/http-server/handlers/image/processor"
-	"online-photo-editor/cmd/internal/http-server/handlers/image/resize"
-	"online-photo-editor/cmd/internal/http-server/handlers/image/saturation"
-	"online-photo-editor/cmd/internal/http-server/handlers/image/save"
-	"online-photo-editor/cmd/internal/http-server/handlers/image/sharpen"
-	mwLogger "online-photo-editor/cmd/internal/http-server/middleware/logger"
-	"online-photo-editor/cmd/internal/lib/logger/handlers/slogpretty"
-	"online-photo-editor/cmd/internal/lib/logger/sl"
-	imgStorage "online-photo-editor/cmd/internal/storage/filesystem"
+	"online-photo-editor/internal/config"
+	"online-photo-editor/internal/http-server/handlers/image/blur"
+	"online-photo-editor/internal/http-server/handlers/image/brightness"
+	"online-photo-editor/internal/http-server/handlers/image/contrast"
+	"online-photo-editor/internal/http-server/handlers/image/convert"
+	"online-photo-editor/internal/http-server/handlers/image/crop"
+	"online-photo-editor/internal/http-server/handlers/image/gamma"
+	"online-photo-editor/internal/http-server/handlers/image/processor"
+	"online-photo-editor/internal/http-server/handlers/image/resize"
+	"online-photo-editor/internal/http-server/handlers/image/saturation"
+	"online-photo-editor/internal/http-server/handlers/image/sharpen"
+	"online-photo-editor/internal/http-server/handlers/image/upload"
+	mwLogger "online-photo-editor/internal/http-server/middleware/logger"
+	"online-photo-editor/internal/lib/logger/handlers/slogpretty"
+	"online-photo-editor/internal/lib/logger/sl"
+	imgStorage "online-photo-editor/internal/storage/filesystem"
 	"os"
 	"os/signal"
 	"syscall"
@@ -48,8 +48,6 @@ func main() {
 		log.Error("failed to init image storage", sl.Err(err))
 		os.Exit(1)
 	}
-
-	//TODO: add storage with users and their authentication
 
 	router := setupRouter(log, imageStorage, cfg.StorageImagePath)
 
@@ -125,7 +123,7 @@ func setupRouter(log *slog.Logger, imageStorage *imgStorage.ImageStorage, storag
 	router := chi.NewRouter()
 	router.Use(middleware.RequestID, middleware.RealIP, mwLogger.New(log), middleware.Recoverer, middleware.URLFormat)
 
-	router.Post("/image", save.New(log, imageStorage))
+	router.Post("/image", upload.New(log, imageStorage))
 
 	router.Post("/image/crop", crop.New(log, imageStorage))
 

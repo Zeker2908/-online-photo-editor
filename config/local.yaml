@@ -1,0 +1,6 @@
+env: "local" #local, dev, prod
+storage_image_path: "./images" #file system directory
+http_server:
+  address: "localhost:8080"
+  timeout: 4s
+  idle_timeout: 60s
