@@ -175,7 +175,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Contact
 
-For any questions or support, please contact [your-email@example.com](mailto:mud.runner@bk.ru).
+For any questions or support, please contact [mud.runner@bk.ru](mailto:mud.runner@bk.ru).
 
 ---
 
