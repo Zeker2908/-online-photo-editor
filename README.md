@@ -29,7 +29,7 @@ The Online Photo Editor REST API is a robust and scalable solution for editing i
 1. **Clone the repository**:
 
    ```sh
-   git clone https://github.com/yourusername/online-photo-editor.git
+   git clone https://github.com/Zeker2908/online-photo-editor
    cd online-photo-editor
    ```
 
@@ -75,87 +75,230 @@ You can also set environment variables to override the configuration:
 - **Method**: `POST`
 - **Description**: Upload an image to the server.
 - **Request Body**: Form data with the image file.
-- **Response**: JSON object with the image URL.
+- **Response**:
+  ```json
+  {
+    "status": "success",
+    "image_url": "URL of the uploaded image"
+  }
+  ```
 
 ### Image Cropping
 
 - **URL**: `/image/crop`
 - **Method**: `POST`
 - **Description**: Crop an image to specified dimensions.
-- **Request Body**: JSON object with crop parameters.
-- **Response**: JSON object with the cropped image URL.
+- **Request Body**:
+  ```json
+  {
+    "x": 10,
+    "y": 10,
+    "width": 100,
+    "height": 100,
+    "image_name": "example.jpg"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "status": "success",
+    "image_url": "URL of the cropped image"
+  }
+  ```
 
 ### Image Resizing
 
 - **URL**: `/image/resize`
 - **Method**: `POST`
 - **Description**: Resize an image to specified dimensions.
-- **Request Body**: JSON object with resize parameters.
-- **Response**: JSON object with the resized image URL.
+- **Request Body**:
+  ```json
+  {
+    "width": 800,
+    "height": 600,
+    "image_name": "example.jpg"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "status": "success",
+    "image_url": "URL of the resized image"
+  }
+  ```
 
 ### Image Conversion
 
 - **URL**: `/image/convert`
 - **Method**: `POST`
 - **Description**: Convert an image between different formats.
-- **Request Body**: JSON object with conversion parameters.
-- **Response**: JSON object with the converted image URL.
+- **Request Body**:
+  ```json
+  {
+    "format": "png",
+    "image_name": "example.jpg"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "status": "success",
+    "image_url": "URL of the converted image"
+  }
+  ```
 
 ### Image Blurring
 
 - **URL**: `/image/blur`
 - **Method**: `POST`
 - **Description**: Apply blur effects to an image.
-- **Request Body**: JSON object with blur parameters.
-- **Response**: JSON object with the blurred image URL.
+- **Request Body**:
+  ```json
+  {
+    "sigma": 5.0,
+    "image_name": "example.jpg"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "status": "success",
+    "image_url": "URL of the blurred image"
+  }
+  ```
 
 ### Brightness Adjustment
 
 - **URL**: `/image/brightness`
 - **Method**: `POST`
 - **Description**: Adjust the brightness of an image.
-- **Request Body**: JSON object with brightness parameters.
-- **Response**: JSON object with the adjusted image URL.
+- **Request Body**:
+  ```json
+  {
+    "percentage": 20.0,
+    "image_name": "example.jpg"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "status": "success",
+    "image_url": "URL of the adjusted image"
+  }
+  ```
 
 ### Contrast Adjustment
 
 - **URL**: `/image/contrast`
 - **Method**: `POST`
 - **Description**: Adjust the contrast of an image.
-- **Request Body**: JSON object with contrast parameters.
-- **Response**: JSON object with the adjusted image URL.
+- **Request Body**:
+  ```json
+  {
+    "percentage": 30.0,
+    "image_name": "example.jpg"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "status": "success",
+    "image_url": "URL of the adjusted image"
+  }
+  ```
 
 ### Gamma Correction
 
 - **URL**: `/image/gamma`
 - **Method**: `POST`
 - **Description**: Apply gamma correction to an image.
-- **Request Body**: JSON object with gamma parameters.
-- **Response**: JSON object with the corrected image URL.
+- **Request Body**:
+  ```json
+  {
+    "sigma": 2.2,
+    "image_name": "example.jpg"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "status": "success",
+    "image_url": "URL of the corrected image"
+  }
+  ```
 
 ### Saturation Adjustment
 
 - **URL**: `/image/saturation`
 - **Method**: `POST`
 - **Description**: Adjust the saturation of an image.
-- **Request Body**: JSON object with saturation parameters.
-- **Response**: JSON object with the adjusted image URL.
+- **Request Body**:
+  ```json
+  {
+    "percentage": 40.0,
+    "image_name": "example.jpg"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "status": "success",
+    "image_url": "URL of the adjusted image"
+  }
+  ```
 
 ### Sharpening
 
 - **URL**: `/image/sharpen`
 - **Method**: `POST`
 - **Description**: Apply sharpening effects to an image.
-- **Request Body**: JSON object with sharpen parameters.
-- **Response**: JSON object with the sharpened image URL.
+- **Request Body**:
+  ```json
+  {
+    "sigma": 1.5,
+    "image_name": "example.jpg"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "status": "success",
+    "image_url": "URL of the sharpened image"
+  }
+  ```
 
 ### Image Processing
 
 - **URL**: `/image/process`
 - **Method**: `POST`
 - **Description**: Apply a sequence of image processing operations.
-- **Request Body**: JSON object with processing parameters.
-- **Response**: JSON object with the processed image URL.
+- **Request Body**:
+  ```json
+  {
+    "actions": [
+      {
+        "action": "blur",
+        "params": {
+          "sigma": 5.0
+        }
+      },
+      {
+        "action": "brightness",
+        "params": {
+          "percentage": 20.0
+        }
+      }
+    ],
+    "image_name": "example.jpg"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "status": "success",
+    "image_url": "URL of the processed image"
+  }
+  ```
 
 ## Logging
 
