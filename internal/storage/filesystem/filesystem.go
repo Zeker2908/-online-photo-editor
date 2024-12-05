@@ -144,8 +144,11 @@ func (img *ImageStorage) SaveImage(inputImg image.Image, imgName string) (string
 		return "", fmt.Errorf("%s: %w", op, err)
 	}
 
-	return filePath, nil
+	imageURL := fmt.Sprintf("/images/%s", imgName)
+
+	return imageURL, nil
 }
+
 func (img *ImageStorage) GenerateName(prefix string, fileExt string) (string, error) {
 	const op = "storage.img.GenerateName"
 
@@ -159,6 +162,7 @@ func (img *ImageStorage) GenerateName(prefix string, fileExt string) (string, er
 
 	return fmt.Sprintf("%s_%s%s", prefix, time.Now().Format("20060102150405"), fileExt), nil
 }
+
 func saveJPEG(img image.Image, filePath string) error {
 	file, err := os.Create(filePath)
 	if err != nil {
@@ -178,6 +182,7 @@ func savePNG(img image.Image, filePath string) error {
 
 	return png.Encode(file, img)
 }
+
 func saveGIF(img image.Image, filePath string) error {
 	file, err := os.Create(filePath)
 	if err != nil {
@@ -187,6 +192,7 @@ func saveGIF(img image.Image, filePath string) error {
 
 	return gif.Encode(file, img, nil)
 }
+
 func saveBMP(img image.Image, filePath string) error {
 	file, err := os.Create(filePath)
 	if err != nil {
@@ -196,6 +202,7 @@ func saveBMP(img image.Image, filePath string) error {
 
 	return bmp.Encode(file, img)
 }
+
 func isImage(mimeType string) bool {
 	switch mimeType {
 	case "image/jpeg", "image/png", "image/bmp", "image/gif":

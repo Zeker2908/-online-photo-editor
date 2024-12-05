@@ -51,9 +51,6 @@ func main() {
 
 	router := setupRouter(log, imageStorage, cfg.StorageImagePath)
 
-	fileServer := http.FileServer(http.Dir(cfg.StorageImagePath))
-	router.Handle("/images/*", http.StripPrefix("/images", fileServer))
-
 	log.Info("starting server", slog.String("address", cfg.Address))
 
 	done := make(chan os.Signal, 1)
@@ -78,7 +75,6 @@ func main() {
 	<-done
 	log.Info("stopping server")
 
-	// TODO: move timeout to config
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
